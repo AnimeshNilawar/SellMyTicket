@@ -1,4 +1,17 @@
 const Ticket = require('../models/Ticket');
+const multer = require('multer');
+const path = require('path');
+
+// Multer setup for image uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
 
 // POST /api/tickets - create a ticket
 exports.createTicket = async (req, res) => {
@@ -157,6 +170,39 @@ exports.markTicketSold = async (req, res) => {
         await ticket.save();
 
         res.status(200).json({ message: 'Ticket marked as sold successfully', ticket });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+// POST /api/tickets/:id/image - upload image for a ticket
+exports.uploadTicketImage = async (req, res) => {
+    try {
+        const ticketId = req.params.id;
+        const ticket = await Ticket.findById(ticketId);
+        if (!ticket) {
+            return res.status(404).json({ message: 'Ticket not found' });
+        }
+        if (!req.file) {
+            return res.status(400).json({ message: 'No image file uploaded' });
+        }
+        ticket.imageUrl = `/uploads/${req.file.filename}`;
+        await ticket.save();
+        res.status(200).json({ message: 'Image uploaded successfully', imageUrl: ticket.imageUrl });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+// GET /api/tickets/:id - get details of a specific ticket (selected fields only)
+exports.getTicketById = async (req, res) => {
+    try {
+        const ticketId = req.params.id;
+        const ticket = await Ticket.findById(ticketId).select('status resalePrice originalPrice ticketType seatNumber city venue eventDate eventName imageUrl');
+        if (!ticket) {
+            return res.status(404).json({ message: 'Ticket not found' });
+        }
+        res.status(200).json(ticket);
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }

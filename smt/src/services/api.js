@@ -14,6 +14,8 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        // Log headers for debugging
+        console.log('API Request:', config.method?.toUpperCase(), config.url, 'Headers:', config.headers);
         return config;
     },
     (error) => Promise.reject(error)
@@ -90,6 +92,17 @@ export const ticketService = {
             console.error('Error marking ticket as sold:', error);
             throw error;
         }
+    },
+
+    // Get tickets listed by the current user
+    getUserTickets: async () => {
+        try {
+            const response = await api.get('/tickets/my');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching user tickets:', error);
+            throw error;
+        }
     }
 };
 
@@ -99,6 +112,7 @@ export const authService = {
         try {
             const response = await api.post('/auth/login', credentials);
             localStorage.setItem('token', response.data.token);
+            localStorage.setItem('token_timestamp', Date.now().toString());
             return response.data;
         } catch (error) {
             console.error('Login error:', error);
@@ -110,6 +124,7 @@ export const authService = {
         try {
             const response = await api.post('/auth/register', userData);
             localStorage.setItem('token', response.data.token);
+            localStorage.setItem('token_timestamp', Date.now().toString());
             return response.data;
         } catch (error) {
             console.error('Registration error:', error);
@@ -119,6 +134,18 @@ export const authService = {
 
     logout: () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('token_timestamp');
+    },
+
+    // Get current user profile (updated to use /users/me)
+    getProfile: async () => {
+        try {
+            const response = await api.get('/users/me');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            throw error;
+        }
     }
 };
 

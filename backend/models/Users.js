@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Encrypt password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
     try {
         const salt = await bcrypt.genSalt(10);
@@ -39,16 +39,16 @@ userSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Generate JWT method
-userSchema.methods.generateJWT = function() {
+userSchema.methods.generateJWT = function () {
     return jwt.sign(
         { id: this._id, username: this.username, role: this.role },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: '24h' }
     );
 };
 

@@ -53,6 +53,10 @@ const ticketSchema = new mongoose.Schema({
         ref: 'User'
 
     }],
+    imageUrl: {
+        type: String,
+        default: ''
+    }
 
 }, { timestamps: true });
 
