@@ -11,12 +11,20 @@ function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [popup, setPopup] = useState({ show: false, message: '', error: false });
+  const [similarEvents, setSimilarEvents] = useState([]);
 
   useEffect(() => {
     async function fetchEvent() {
       try {
         const data = await ticketService.getTicketById(id);
         setEventDetails(data);
+        // Fetch similar events from the same city (excluding this event)
+        if (data && data.city) {
+          const all = await ticketService.getAvailableTickets({ city: data.city });
+          setSimilarEvents(all.filter(ev => ev._id !== id).slice(0, 3));
+        } else {
+          setSimilarEvents([]);
+        }
       } catch {
         setError('Could not load event details.');
       } finally {
@@ -102,40 +110,43 @@ function EventDetail() {
       {/* Similar Events Section */}
       <section className="bg-cyan-300 py-10 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center mb-6">
-            <Clock size={20} className="mr-2" />
-            <h2 className="text-xl font-semibold">SIMILAR EVENTS</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-6 mb-4">
-            {/* Similar events data - this should ideally come from an API as well */}
-            {[1, 2, 3].map((id) => (
-              <div key={id} className="bg-white rounded-lg overflow-hidden shadow-md">
-                <img
-                  src={`/api/placeholder/400/300`}
-                  alt={`Similar Event ${id}`}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-bold text-lg mb-2">Similar Event {id}</h3>
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <Clock size={16} className="mr-2" />
-                    <span className="text-sm">Date Time</span>
-                  </div>
-                  <div className="flex items-center text-gray-600 mb-4">
-                    <MapPin size={16} className="mr-2" />
-                    <span className="text-sm">Venue, City</span>
-                  </div>
-                  <button className="bg-red-600 text-white text-sm w-full py-1 rounded">
-                    View Tickets
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end">
-            <button className="bg-black text-white px-4 py-2 rounded-md flex items-center text-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <Clock size={20} className="mr-2" />
+              <h2 className="text-xl font-semibold">SIMILAR EVENTS</h2>
+            </div>
+            <button className="bg-black text-white px-4 py-2 rounded-md flex items-center text-sm" onClick={() => window.location.href = '/events'}>
               MORE EVENTS <ChevronRight size={16} className="ml-1" />
             </button>
+          </div>
+          <div className="grid grid-cols-3 gap-6 mb-4">
+            {similarEvents.length === 0 ? (
+              <div className="text-gray-500 col-span-3">No similar events found in this city.</div>
+            ) : (
+              similarEvents.map(event => (
+                <div key={event._id} className="bg-white rounded-lg overflow-hidden shadow-md cursor-pointer" onClick={() => window.location.href = `/event/${event._id}`}>
+                  <img
+                    src={event.imageUrl ? (event.imageUrl.startsWith('/') ? event.imageUrl : `/${event.imageUrl}`) : '/api/placeholder/400/300'}
+                    alt={event.eventName}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="font-bold text-lg mb-2">{event.eventName}</h3>
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Clock size={16} className="mr-2" />
+                      <span className="text-sm">{new Date(event.eventDate).toLocaleDateString()} | {new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600 mb-4">
+                      <MapPin size={16} className="mr-2" />
+                      <span className="text-sm">{event.venue}{event.city ? `, ${event.city}` : ''}</span>
+                    </div>
+                    <button className="bg-red-600 text-white text-sm w-full py-1 rounded">
+                      View Tickets
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

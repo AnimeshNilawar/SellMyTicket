@@ -24,7 +24,7 @@ export default function Navbar() {
                 <span className="text-red-600">Ticket</span>
             </div>
             <div className="flex items-center space-x-6">
-                <button className="text-gray-700 text-sm font-medium" onClick={() => navigate('/')}>Explore Tickets</button>
+                <button className="text-gray-700 text-sm font-medium" onClick={() => navigate('/events')}>Explore Tickets</button>
                 <button className="text-gray-700 text-sm font-medium" onClick={() => navigate('/sell-tickets')}>Sell Tickets</button>
                 {isLoggedIn ? (
                     <>

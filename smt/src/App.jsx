@@ -9,6 +9,10 @@ import Register from './Pages/Register'
 import SellTicket from './Pages/SellTicket'
 import NotFound from './Pages/NotFound'
 import UserProfile from './Pages/UserProfile'
+import AllEvents from './Pages/AllEvents'
+import CommunityGuidelines from './Pages/CommunityGuidelines'
+import HowToBuy from './Pages/HowToBuy'
+import HowToSell from './Pages/HowToSell'
 
 function App() {
   // Check token and expiry on app load
@@ -35,6 +39,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/events" element={<AllEvents />} />
+        <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+        <Route path="/how-to-buy" element={<HowToBuy />} />
+        <Route path="/how-to-sell" element={<HowToSell />} />
 
         {/* Protected Routes */}
         <Route

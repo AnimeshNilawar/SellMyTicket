@@ -97,10 +97,32 @@ export const ticketService = {
     // Get tickets listed by the current user
     getUserTickets: async () => {
         try {
-            const response = await api.get('/tickets/my');
+            const response = await api.get('/users/me/listed-tickets');
             return response.data;
         } catch (error) {
             console.error('Error fetching user tickets:', error);
+            throw error;
+        }
+    },
+
+    // Get tickets enquired by the current user
+    getUserEnquiredTickets: async () => {
+        try {
+            const response = await api.get('/users/me/enquired-tickets');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching enquired tickets:', error);
+            throw error;
+        }
+    },
+
+    // Get events by date filter (today, tomorrow, weekend)
+    getEventsByDate: async (dateType) => {
+        try {
+            const response = await api.get(`/tickets/date/${dateType}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching events by date:', error);
             throw error;
         }
     }

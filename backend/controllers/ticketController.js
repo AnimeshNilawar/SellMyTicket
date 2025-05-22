@@ -27,6 +27,10 @@ exports.createTicket = async (req, res) => {
             city
         } = req.body;
 
+        // Pick a random default image from assets
+        const defaultImages = ['/assets/default.png', '/assets/default2.png', '/assets/default3.png'];
+        const imageUrl = defaultImages[Math.floor(Math.random() * defaultImages.length)];
+
         const newTicket = new Ticket({
             eventName,
             eventDate,
@@ -37,7 +41,8 @@ exports.createTicket = async (req, res) => {
             originalPrice,
             resalePrice,
             owner: req.user.id,
-            listingFeePaid: true
+            listingFeePaid: true,
+            imageUrl
         });
 
         await newTicket.save();
@@ -203,6 +208,42 @@ exports.getTicketById = async (req, res) => {
             return res.status(404).json({ message: 'Ticket not found' });
         }
         res.status(200).json(ticket);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+exports.getTicketsByDate = async (req, res) => {
+    try {
+        const now = new Date();
+        let start, end;
+        const type = req.params.type;
+
+        if (type === 'today') {
+            start = new Date(now.setHours(0, 0, 0, 0));
+            end = new Date(now.setHours(23, 59, 59, 999));
+        } else if (type === 'tomorrow') {
+            const tomorrow = new Date(now);
+            tomorrow.setDate(now.getDate() + 1);
+            start = new Date(tomorrow.setHours(0, 0, 0, 0));
+            end = new Date(tomorrow.setHours(23, 59, 59, 999));
+        } else if (type === 'weekend') {
+            // Find next Saturday
+            const day = now.getDay();
+            const saturday = new Date(now);
+            saturday.setDate(now.getDate() + ((6 - day) % 7));
+            start = new Date(saturday.setHours(0, 0, 0, 0));
+            // Sunday
+            const sunday = new Date(saturday);
+            sunday.setDate(saturday.getDate() + 1);
+            end = new Date(sunday.setHours(23, 59, 59, 999));
+        } else {
+            return res.status(400).json({ message: 'Invalid type. Use today, tomorrow, or weekend.' });
+        }
+
+        const tickets = await Ticket.find({ eventDate: { $gte: start, $lte: end }, status: 'available' })
+            .select('-owner -listingFeePaid -enquiredUsers -createdAt -updatedAt -__v');
+        res.json(tickets);
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }

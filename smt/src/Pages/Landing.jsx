@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Search, ChevronRight, Clock, MapPin, Heart, Star, Facebook, Linkedin, Youtube, Instagram } from 'lucide-react';
+import { Search, ChevronRight, Clock, MapPin, Heart, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ticketService, cityService } from '../services/api';
+import { ticketService } from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import EventCard from '../components/EventCard';
 
 export default function Landing() {
   const [activeTab, setActiveTab] = useState('Today');
@@ -12,12 +13,13 @@ export default function Landing() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cities, setCities] = useState([]);
+  const [eventsThisWeek, setEventsThisWeek] = useState([]);
   const navigate = useNavigate();
 
   // Fetch data from API
   useEffect(() => {
     fetchData();
+    fetchEventsThisWeek('today');
   }, []);
 
   const fetchData = async () => {
@@ -25,16 +27,12 @@ export default function Landing() {
       // Get available tickets from the API
       const tickets = await ticketService.getAvailableTickets();
 
-      // Get cities for filters
-      const citiesData = await cityService.getCities();
-      setCities(citiesData);
-
       // Categories data (this could come from API in a real app)
       const categoriesData = [
-        { id: 1, name: 'MUSIC', image: '/api/placeholder/320/240' },
-        { id: 2, name: 'THEATRE', image: '/api/placeholder/320/240' },
-        { id: 3, name: 'SPORTS', image: '/api/placeholder/320/240' },
-        { id: 4, name: 'COMEDY', image: '/api/placeholder/320/240' },
+        { id: 1, name: 'MUSIC', image: '/assets/default3.png' },
+        { id: 2, name: 'THEATRE', image: '/assets/theater.png' },
+        { id: 3, name: 'SPORTS', image: '/assets/sports.png' },
+        { id: 4, name: 'COMEDY', image: '/assets/comedy.png' },
       ];
       setCategories(categoriesData);
 
@@ -92,6 +90,15 @@ export default function Landing() {
     } catch (error) {
       console.error('Error fetching data:', error);
       setLoading(false);
+    }
+  };
+
+  const fetchEventsThisWeek = async (tab) => {
+    try {
+      const events = await ticketService.getEventsByDate(tab);
+      setEventsThisWeek(events);
+    } catch {
+      setEventsThisWeek([]);
     }
   };
 
@@ -173,7 +180,7 @@ export default function Landing() {
             onClick={() => handleEventClick('featured')}
           >
             <img
-              src="/api/placeholder/1200/600"
+              src="/assets/default3.png"
               alt="Coldplay Concert"
               className="w-full h-full object-cover"
             />
@@ -208,31 +215,20 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-3 gap-6 mb-4">
             {popularEvents.map((event) => (
-              <div
+              <EventCard
                 key={event.id}
-                className="bg-white rounded-lg overflow-hidden shadow-md cursor-pointer"
+                id={event.id}
+                title={event.title}
+                date={event.date}
+                time={event.time}
+                venue={event.venue}
+                city={event.city}
+                price={event.price}
+                image={event.image}
                 onClick={() => handleEventClick(event.id)}
-              >
-                <img
-                  src={event.image}
-                  alt={event.title}
-                  className="w-full h-40 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-bold text-lg mb-2">{event.title}</h3>
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <Clock size={16} className="mr-2" />
-                    <span className="text-sm">{event.date} | {event.time}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600 mb-4">
-                    <MapPin size={16} className="mr-2" />
-                    <span className="text-sm">{event.venue}</span>
-                  </div>
-                  <button className="bg-red-600 text-white text-sm w-full py-1 rounded">
-                    BOOK TICKETS
-                  </button>
-                </div>
-              </div>
+                buttonLabel="VIEW DETAILS"
+                buttonAction={() => handleEventClick(event.id)}
+              />
             ))}
           </div>
         </div>
@@ -248,25 +244,47 @@ export default function Landing() {
           <div className="flex space-x-4 mb-6">
             <button
               className={`px-6 py-3 rounded-md ${activeTab === 'Today' ? 'bg-red-600 text-white' : 'bg-white text-red-600'}`}
-              onClick={() => setActiveTab('Today')}
+              onClick={() => { setActiveTab('Today'); fetchEventsThisWeek('today'); }}
             >
               Today
               <div className="text-xs">{formatDate(today)}</div>
             </button>
             <button
               className={`px-6 py-3 rounded-md ${activeTab === 'Tomorrow' ? 'bg-red-600 text-white' : 'bg-white text-red-600'}`}
-              onClick={() => setActiveTab('Tomorrow')}
+              onClick={() => { setActiveTab('Tomorrow'); fetchEventsThisWeek('tomorrow'); }}
             >
               Tomorrow
               <div className="text-xs">{formatDate(tomorrow)}</div>
             </button>
             <button
               className={`px-6 py-3 rounded-md ${activeTab === 'Weekend' ? 'bg-red-600 text-white' : 'bg-white text-red-600'}`}
-              onClick={() => setActiveTab('Weekend')}
+              onClick={() => { setActiveTab('Weekend'); fetchEventsThisWeek('weekend'); }}
             >
               Coming Weekend
               <div className="text-xs">{formatDate(nextSaturday)} - {formatDate(nextSunday)}</div>
             </button>
+          </div>
+          <div className="grid grid-cols-3 gap-6 mb-4">
+            {eventsThisWeek.length === 0 ? (
+              <div className="text-gray-500 col-span-3">No events found for this date.</div>
+            ) : (
+              eventsThisWeek.map(event => (
+                <EventCard
+                  key={event._id}
+                  id={event._id}
+                  title={event.eventName}
+                  date={new Date(event.eventDate).toLocaleDateString()}
+                  time={new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  venue={event.venue}
+                  city={event.city}
+                  price={event.resalePrice}
+                  image={event.imageUrl ? (event.imageUrl.startsWith('/') ? event.imageUrl : `/${event.imageUrl}`) : '/api/placeholder/320/240'}
+                  onClick={() => handleEventClick(event._id)}
+                  buttonLabel="BOOK TICKETS"
+                  buttonAction={() => handleEventClick(event._id)}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -295,11 +313,6 @@ export default function Landing() {
               </div>
             ))}
           </div>
-          <div className="flex justify-end">
-            <button className="bg-black text-white px-4 py-2 rounded-md flex items-center text-sm">
-              NEXT <ChevronRight size={16} className="ml-1" />
-            </button>
-          </div>
         </div>
       </section>
 
@@ -323,19 +336,9 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-3 gap-6">
             {reviews.map((review) => (
-              <div key={review.id} className="bg-white p-6 rounded-lg shadow-md">
-                <p className="mb-4 text-gray-700">{review.text}</p>
-                <div className="flex items-center">
-                  <img
-                    src={review.user.avatar}
-                    alt={review.user.name}
-                    className="w-10 h-10 rounded-full mr-3"
-                  />
-                  <div>
-                    <h4 className="font-medium">{review.user.name}</h4>
-                    <p className="text-sm text-gray-500">{review.user.description}</p>
-                  </div>
-                </div>
+              <div key={review.id} className="bg-white rounded-lg p-4 shadow-md">
+                <p className="text-gray-800 italic">{review.text}</p>
+                <div className="mt-4 font-semibold text-gray-700">{review.user?.name}</div>
               </div>
             ))}
           </div>

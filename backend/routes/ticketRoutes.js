@@ -37,4 +37,7 @@ router.post('/:id/image', authMiddleware, upload.single('image'), ticketControll
 // Get details of a specific ticket
 router.get('/:id', ticketController.getTicketById);
 
+// GET /api/tickets/date/:type - get events for today, tomorrow, or coming weekend
+router.get('/date/:type', ticketController.getTicketsByDate);
+
 module.exports = router;
